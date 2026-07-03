@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "C:\\Progetti Claude\\Sito Bistro\\.tools\\node-v22.17.0-win-x64\\node.exe",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev", "-p", "3000"],
+      "port": 3000
+    }
+  ]
+}
