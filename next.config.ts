@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // niente overlay/indicatori di sviluppo Next.js nell'angolo della pagina
+  devIndicators: false,
 };
 
 export default nextConfig;

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   homeVisuals,
@@ -10,6 +11,12 @@ import {
   type VisualContent,
   type MenuItem,
 } from "@/config/site-content";
+
+// la scena 3D usa WebGL/three.js: caricata solo client-side, fuori dal bundle iniziale
+const MusicScene = dynamic(() => import("./MusicScene"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-[#100322]" />,
+});
 
 type Side = "music" | "media";
 
@@ -35,6 +42,14 @@ export default function SplitLanding() {
   useEffect(() => {
     stateRef.current = { hovered, expanded };
   }, [hovered, expanded]);
+
+  // su dispositivi touch il parallax col mouse non ha senso: lo disattiviamo
+  const isTouchRef = useRef(false);
+  useEffect(() => {
+    isTouchRef.current = window.matchMedia(
+      "(hover: none), (pointer: coarse)",
+    ).matches;
+  }, []);
 
   const anim = useRef({
     pos: IDLE, // posizione attuale del divisore
@@ -86,7 +101,7 @@ export default function SplitLanding() {
       const ease = (tau: number) => 1 - Math.exp(-dt / tau);
       a.pos += (target - a.pos) * ease(260);
       a.amp += ((s.hovered && !s.expanded ? 1.45 : 1) - a.amp) * ease(320);
-      a.logoX += (a.pos - a.logoX) * ease(420);
+      a.logoX += (a.pos - a.logoX) * ease(70); // quasi incollato al divisore
       a.px += (a.mouseNX - a.px) * ease(160);
       a.py += (a.mouseNY - a.py) * ease(160);
       a.t += dt;
@@ -138,6 +153,9 @@ export default function SplitLanding() {
     clientX < anim.current.pos * window.innerWidth ? "music" : "media";
 
   const onMouseMove = (e: React.MouseEvent) => {
+    // touch: niente parallax né hover (i "mousemove" sintetici dei tap
+    // lascerebbero il logo storto e l'hover appiccicato)
+    if (isTouchRef.current) return;
     const a = anim.current;
     a.mouseNX = (e.clientX / window.innerWidth) * 2 - 1;
     a.mouseNY = (e.clientY / window.innerHeight) * 2 - 1;
@@ -155,22 +173,34 @@ export default function SplitLanding() {
 
   return (
     <div
-      className="relative h-[100svh] w-full cursor-pointer select-none overflow-hidden bg-black"
+      className="moody relative h-[100svh] w-full cursor-pointer select-none overflow-hidden bg-black"
       onMouseMove={onMouseMove}
-      onMouseLeave={() => setHovered(null)}
+      onMouseLeave={() => {
+        setHovered(null);
+        // il mouse è uscito: il logo torna dolcemente centrato (parallax a zero)
+        anim.current.mouseNX = 0;
+        anim.current.mouseNY = 0;
+      }}
       onClick={onClick}
     >
-      {/* ── sezione MUSIC (sinistra, light/psichedelica) ── */}
+      {/* ── sezione MUSIC (sinistra, psichedelica) ── */}
       <section className="absolute inset-0" aria-label="Sezione Music">
-        <Visual
-          content={homeVisuals.music}
-          className={`transition-[filter] duration-500 ${
+        <div
+          className={`h-full w-full transition-[filter] duration-500 ${
             hovered === "music"
-              ? "brightness-[1.08] saturate-[1.15]"
+              ? "brightness-[1.18] saturate-[1.2]"
               : "brightness-100"
           }`}
-        />
-        <span className="absolute bottom-7 left-7 font-mono text-xs font-semibold uppercase tracking-[0.6em] text-neutral-900/70">
+        >
+          {homeVisuals.music.type === "scene" ? (
+            <MusicScene />
+          ) : (
+            <Visual content={homeVisuals.music} />
+          )}
+        </div>
+        {/* gradiente d'ombra dal basso, per ancorare la sezione */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(to_top,rgba(4,2,10,0.55),transparent)]" />
+        <span className="absolute bottom-7 left-7 font-mono text-xs font-semibold uppercase tracking-[0.6em] text-white/65 mix-blend-screen">
           Music
         </span>
       </section>
@@ -184,11 +214,13 @@ export default function SplitLanding() {
       >
         <Visual
           content={homeVisuals.media}
-          className={`transition-[filter] duration-500 ${
+          className={`saturate-[0.7] contrast-[1.08] transition-[filter] duration-500 ${
             hovered === "media" ? "brightness-[1.35]" : "brightness-100"
           }`}
         />
-        <div className="absolute inset-0 bg-black/35" />
+        {/* più scuro verso il bordo destro: mood cinematografico */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.3),rgba(0,0,0,0.62))]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(to_top,rgba(0,0,0,0.5),transparent)]" />
         <span className="absolute bottom-7 right-7 font-mono text-xs font-semibold uppercase tracking-[0.6em] text-white/60">
           Media
         </span>
@@ -210,10 +242,12 @@ export default function SplitLanding() {
         />
       </svg>
 
-      {/* ── logo BISTRO: CD + scritta, parallax su due livelli ── */}
+      {/* ── logo BISTRO: CD + scritta, parallax su due livelli.
+           z-16: sopra grana/vignetta (z-15) → si stacca dal fondo filmico,
+           ma sempre sotto i menu laterali (z-20) ── */}
       <div
         ref={logoWrapRef}
-        className="pointer-events-none absolute top-1/2 z-10"
+        className="pointer-events-none absolute top-1/2 z-[16]"
         style={{ left: "50%" }}
       >
         <div className="relative w-[clamp(220px,34vw,430px)] -translate-x-1/2 -translate-y-1/2">
@@ -309,7 +343,7 @@ function SideMenu({
       aria-hidden={!open}
       className={`absolute inset-y-0 z-20 flex w-[min(400px,86vw)] cursor-auto flex-col justify-between px-10 py-12 transition-transform duration-700 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
         isMusic
-          ? `left-0 bg-[#faf6ee]/95 text-neutral-900 backdrop-blur-md ${open ? "translate-x-0" : "-translate-x-[103%]"}`
+          ? `left-0 bg-[#ece4d0]/95 text-neutral-900 backdrop-blur-md ${open ? "translate-x-0" : "-translate-x-[103%]"}`
           : `right-0 bg-[#0a0a0c]/90 text-neutral-100 backdrop-blur-md ${open ? "translate-x-0" : "translate-x-[103%]"}`
       }`}
     >

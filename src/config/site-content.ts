@@ -2,8 +2,9 @@
 // senza toccare i componenti.
 
 export type VisualContent = {
-  type: "image" | "video";
-  src: string;
+  /** "scene" = scena 3D procedurale (shader + strumenti fluttuanti) */
+  type: "image" | "video" | "scene";
+  src?: string;
   alt?: string;
   /** poster per i video (opzionale) */
   poster?: string;
@@ -12,12 +13,11 @@ export type VisualContent = {
 /**
  * Sfondi delle due sezioni della homepage.
  * Per passare a un video: { type: "video", src: "/assets/mio-video.mp4" }
+ * Per tornare a un'immagine sul lato music: { type: "image", src: "/assets/music-bg.jpg" }
  */
 export const homeVisuals: Record<"music" | "media", VisualContent> = {
   music: {
-    type: "image",
-    src: "/assets/music-bg.jpg",
-    alt: "Synth e tastiere in studio",
+    type: "scene",
   },
   media: {
     type: "image",
