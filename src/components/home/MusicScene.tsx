@@ -3,7 +3,7 @@
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, useFBO } from "@react-three/drei";
 import * as THREE from "three";
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { memo, Suspense, useEffect, useMemo, useRef } from "react";
 
 /**
  * Scena 3D della sezione MUSIC — pipeline a 4 passi:
@@ -278,6 +278,13 @@ function PsychBackground() {
     s.viewport.getCurrentViewport(s.camera, BG_POS),
   );
 
+  // identità STABILE: un oggetto inline verrebbe ri-applicato da R3F a ogni
+  // re-render (es. hover), azzerando uTime → lo sfondo ripartiva da capo
+  const uniforms = useMemo(
+    () => ({ uTime: { value: 0 }, uAspect: { value: 1 } }),
+    [],
+  );
+
   useFrame((_, dt) => {
     const m = matRef.current;
     if (!m) return;
@@ -292,7 +299,7 @@ function PsychBackground() {
         ref={matRef}
         vertexShader={psychVertex}
         fragmentShader={psychFragment}
-        uniforms={{ uTime: { value: 0 }, uAspect: { value: 1 } }}
+        uniforms={uniforms}
         depthWrite={false}
       />
     </mesh>
@@ -511,7 +518,7 @@ function PipelineRoot() {
   );
 }
 
-export default function MusicScene() {
+function MusicScene() {
   return (
     // pointer-events-none: la scena è puramente decorativa; i click devono
     // passare alla sezione sottostante (il sistema eventi di R3F li bloccherebbe)
@@ -526,3 +533,7 @@ export default function MusicScene() {
     </div>
   );
 }
+
+// memo: la scena non ha props — i re-render di SplitLanding (hover, menu)
+// non devono propagarsi all'albero R3F
+export default memo(MusicScene);
