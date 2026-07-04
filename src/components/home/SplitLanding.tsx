@@ -38,6 +38,8 @@ export default function SplitLanding() {
   const logoTextRef = useRef<HTMLDivElement>(null);
   const shineConicRef = useRef<HTMLDivElement>(null);
   const shineStreakRef = useRef<HTMLDivElement>(null);
+  const labelMusicRef = useRef<HTMLDivElement>(null);
+  const labelMediaRef = useRef<HTMLDivElement>(null);
 
   // stato letto dal loop di animazione senza ri-render
   const stateRef = useRef({ hovered, expanded });
@@ -56,6 +58,8 @@ export default function SplitLanding() {
   const anim = useRef({
     pos: IDLE, // posizione attuale del divisore
     logoX: IDLE, // il logo segue il divisore con un po' di ritardo
+    menuInsetL: 0, // spazio occupato dal menu music (animato, in px)
+    menuInsetR: 0, // spazio occupato dal menu media (animato, in px)
     amp: 1, // ampiezza dell'onda (cresce leggermente in hover)
     px: 0, // parallax corrente (lerp verso il mouse)
     py: 0,
@@ -102,6 +106,13 @@ export default function SplitLanding() {
 
       const ease = (tau: number) => 1 - Math.exp(-dt / tau);
       a.pos += (target - a.pos) * ease(260);
+      // larghezza occupata dai menu laterali (stessa dei pannelli SideMenu),
+      // animata con la stessa curva del divisore
+      const menuW = Math.min(400, W * 0.86);
+      a.menuInsetL +=
+        ((s.expanded === "music" ? menuW : 0) - a.menuInsetL) * ease(260);
+      a.menuInsetR +=
+        ((s.expanded === "media" ? menuW : 0) - a.menuInsetR) * ease(260);
       a.amp += ((s.hovered && !s.expanded ? 1.45 : 1) - a.amp) * ease(320);
       a.logoX += (a.pos - a.logoX) * ease(70); // quasi incollato al divisore
       a.px += (a.mouseNX - a.px) * ease(160);
@@ -135,6 +146,12 @@ export default function SplitLanding() {
       // logo appoggiato sul divisore + parallax (il CD si muove meno della scritta)
       if (logoWrapRef.current)
         logoWrapRef.current.style.left = `${(a.logoX * 100).toFixed(3)}%`;
+      // scritte giganti: centrate dinamicamente nello spazio visibile del
+      // proprio lato — tra il menu laterale (se aperto) e il logo/divisore
+      if (labelMusicRef.current)
+        labelMusicRef.current.style.left = `${((a.menuInsetL + a.pos * W) / 2).toFixed(1)}px`;
+      if (labelMediaRef.current)
+        labelMediaRef.current.style.left = `${((a.pos * W + (W - a.menuInsetR)) / 2).toFixed(1)}px`;
       // il CD "guarda" verso il mouse: tilt 3D prospettico oltre al translate
       if (logoCdRef.current)
         logoCdRef.current.style.transform = `perspective(900px) rotateX(${(-a.py * 13).toFixed(2)}deg) rotateY(${(a.px * 13).toFixed(2)}deg) translate(${(a.px * 7).toFixed(2)}px, ${(a.py * 7).toFixed(2)}px)`;
@@ -263,29 +280,33 @@ export default function SplitLanding() {
 
       {/* ── scritte giganti in hover: testo bianco in mix-blend-difference,
            quindi appare come il NEGATIVO esatto dei colori sottostanti.
-           Ancorate ai bordi dello schermo, senza margine: riempiono il lato
-           e al massimo l'ultima lettera finisce leggermente sotto il logo
-           (che sta a z-16, sopra). Appaiono in hover e RESTANO a sezione
-           aperta — così si vedono anche su mobile, dove l'hover non esiste ── */}
+           La posizione orizzontale è guidata dal loop di animazione: centro
+           dello spazio visibile del lato, tra menu (se aperto) e logo.
+           Appaiono in hover e RESTANO a sezione aperta — così si vedono
+           anche su mobile, dove l'hover non esiste ── */}
       <div
+        ref={labelMusicRef}
         aria-hidden
-        className={`pointer-events-none absolute left-0 top-1/2 z-[12] origin-left -translate-y-1/2 mix-blend-difference transition-[opacity,scale] duration-500 ${
+        className={`pointer-events-none absolute top-1/2 z-[12] -translate-x-1/2 -translate-y-1/2 mix-blend-difference transition-[opacity,scale] duration-500 ${
           hovered === "music" || expanded === "music"
             ? "scale-100 opacity-100"
             : "scale-95 opacity-0"
         }`}
+        style={{ left: "25%" }}
       >
         <span className="whitespace-nowrap font-display text-[13vw] font-light uppercase leading-none tracking-[0.02em] text-white">
           Music
         </span>
       </div>
       <div
+        ref={labelMediaRef}
         aria-hidden
-        className={`pointer-events-none absolute right-0 top-1/2 z-[12] origin-right -translate-y-1/2 mix-blend-difference transition-[opacity,scale] duration-500 ${
+        className={`pointer-events-none absolute top-1/2 z-[12] -translate-x-1/2 -translate-y-1/2 mix-blend-difference transition-[opacity,scale] duration-500 ${
           hovered === "media" || expanded === "media"
             ? "scale-100 opacity-100"
             : "scale-95 opacity-0"
         }`}
+        style={{ left: "75%" }}
       >
         <span className="whitespace-nowrap text-[13vw] font-black uppercase leading-none tracking-[0.02em] text-white">
           Media
