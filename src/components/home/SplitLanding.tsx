@@ -106,9 +106,10 @@ export default function SplitLanding() {
 
       const ease = (tau: number) => 1 - Math.exp(-dt / tau);
       a.pos += (target - a.pos) * ease(260);
-      // larghezza occupata dai menu laterali (stessa dei pannelli SideMenu),
-      // animata con la stessa curva del divisore
-      const menuW = Math.min(400, W * 0.86);
+      // larghezza occupata dai menu laterali, animata con la stessa curva
+      // del divisore. Su mobile il menu non ha pannello: le voci occupano
+      // solo una colonna stretta (~42% dello schermo)
+      const menuW = W < 768 ? W * 0.42 : Math.min(400, W * 0.86);
       a.menuInsetL +=
         ((s.expanded === "music" ? menuW : 0) - a.menuInsetL) * ease(260);
       a.menuInsetR +=
@@ -294,7 +295,7 @@ export default function SplitLanding() {
         }`}
         style={{ left: "25%" }}
       >
-        <span className="whitespace-nowrap font-display text-[13vw] font-light uppercase leading-none tracking-[0.02em] text-white">
+        <span className="whitespace-nowrap font-display text-[11vw] font-light uppercase leading-none tracking-[0.02em] text-white md:text-[13vw]">
           Music
         </span>
       </div>
@@ -308,7 +309,7 @@ export default function SplitLanding() {
         }`}
         style={{ left: "75%" }}
       >
-        <span className="whitespace-nowrap text-[13vw] font-black uppercase leading-none tracking-[0.02em] text-white">
+        <span className="whitespace-nowrap text-[11vw] font-black uppercase leading-none tracking-[0.02em] text-white md:text-[13vw]">
           Media
         </span>
       </div>
@@ -442,19 +443,22 @@ function SideMenu({
 }) {
   const isMusic = side === "music";
   return (
+    // Mobile (< md): NIENTE pannello — solo le voci, più piccole, allineate
+    // al lato dello schermo, testo bianco con ombra soffusa.
+    // Desktop (md+): pannello pieno come prima (carta/dark + blur).
     <aside
       onClick={(e) => e.stopPropagation()}
       onMouseMove={(e) => e.stopPropagation()}
       aria-hidden={!open}
-      className={`absolute inset-y-0 z-20 flex w-[min(400px,86vw)] cursor-auto flex-col justify-between px-10 py-12 transition-transform duration-700 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
+      className={`absolute inset-y-0 z-20 flex cursor-auto flex-col justify-between px-5 py-8 transition-transform duration-700 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] md:w-[min(400px,86vw)] md:px-10 md:py-12 ${
         isMusic
-          ? `left-0 bg-[#ece4d0]/95 text-neutral-900 backdrop-blur-md ${open ? "translate-x-0" : "-translate-x-[103%]"}`
-          : `right-0 bg-[#0a0a0c]/90 text-neutral-100 backdrop-blur-md ${open ? "translate-x-0" : "translate-x-[103%]"}`
+          ? `left-0 items-start text-white md:bg-[#ece4d0]/95 md:text-neutral-900 md:backdrop-blur-md ${open ? "translate-x-0" : "-translate-x-[110%]"}`
+          : `right-0 items-end text-neutral-100 md:bg-[#0a0a0c]/90 md:backdrop-blur-md ${open ? "translate-x-0" : "translate-x-[110%]"}`
       }`}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex w-full items-center justify-between gap-6">
         <span
-          className={`font-mono text-xs uppercase tracking-[0.5em] ${isMusic ? "text-neutral-500" : "text-neutral-400"}`}
+          className={`hidden font-mono text-xs uppercase tracking-[0.5em] md:inline ${isMusic ? "text-neutral-500" : "text-neutral-400"}`}
         >
           Bistro — {side}
         </span>
@@ -462,10 +466,10 @@ function SideMenu({
           type="button"
           aria-label="Chiudi menu"
           onClick={onClose}
-          className={`flex h-9 w-9 items-center justify-center rounded-full border text-lg transition-colors ${
+          className={`flex h-9 w-9 items-center justify-center rounded-full border text-lg shadow-lg transition-colors md:shadow-none ${
             isMusic
-              ? "border-neutral-300 hover:bg-neutral-900 hover:text-white"
-              : "border-neutral-700 hover:bg-white hover:text-black"
+              ? "border-white/60 text-white hover:bg-white hover:text-black md:border-neutral-300 md:text-inherit md:hover:bg-neutral-900 md:hover:text-white"
+              : "border-neutral-400 md:border-neutral-700 hover:bg-white hover:text-black"
           }`}
         >
           ×
@@ -484,14 +488,14 @@ function SideMenu({
             >
               <a
                 href={item.href}
-                className={`group flex items-baseline gap-4 py-1 text-4xl font-bold tracking-tight transition-transform duration-300 hover:translate-x-2 ${
+                className={`group flex items-baseline gap-3 py-1 text-2xl font-bold tracking-tight transition-transform duration-300 hover:translate-x-2 md:gap-4 md:text-4xl [text-shadow:0_3px_16px_rgba(0,0,0,0.65)] md:[text-shadow:none] ${
                   isMusic
-                    ? "hover:bg-[linear-gradient(90deg,#e6402e,#f5a623,#2ea86b,#3a6ff0,#b3479e)] hover:bg-clip-text hover:text-transparent"
-                    : "text-neutral-300 hover:text-white"
+                    ? "md:hover:bg-[linear-gradient(90deg,#e6402e,#f5a623,#2ea86b,#3a6ff0,#b3479e)] md:hover:bg-clip-text md:hover:text-transparent"
+                    : "justify-end text-neutral-200 hover:text-white md:justify-start md:text-neutral-300"
                 }`}
               >
                 <span
-                  className={`font-mono text-xs font-normal ${isMusic ? "text-neutral-400" : "text-neutral-500"}`}
+                  className={`font-mono text-xs font-normal ${isMusic ? "text-white/60 md:text-neutral-400" : "text-neutral-400 md:text-neutral-500"}`}
                 >
                   0{i + 1}
                 </span>
@@ -503,7 +507,7 @@ function SideMenu({
       </nav>
 
       <p
-        className={`max-w-[28ch] text-xs leading-relaxed ${isMusic ? "text-neutral-500" : "text-neutral-400"}`}
+        className={`hidden max-w-[28ch] text-xs leading-relaxed md:block ${isMusic ? "text-neutral-500" : "text-neutral-400"}`}
       >
         {collectiveBlurb}
       </p>
