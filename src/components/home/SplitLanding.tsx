@@ -36,6 +36,8 @@ export default function SplitLanding() {
   const logoWrapRef = useRef<HTMLDivElement>(null);
   const logoCdRef = useRef<HTMLDivElement>(null);
   const logoTextRef = useRef<HTMLDivElement>(null);
+  const shineConicRef = useRef<HTMLDivElement>(null);
+  const shineStreakRef = useRef<HTMLDivElement>(null);
 
   // stato letto dal loop di animazione senza ri-render
   const stateRef = useRef({ hovered, expanded });
@@ -133,10 +135,18 @@ export default function SplitLanding() {
       // logo appoggiato sul divisore + parallax (il CD si muove meno della scritta)
       if (logoWrapRef.current)
         logoWrapRef.current.style.left = `${(a.logoX * 100).toFixed(3)}%`;
+      // il CD "guarda" verso il mouse: tilt 3D prospettico oltre al translate
       if (logoCdRef.current)
-        logoCdRef.current.style.transform = `translate(${(a.px * 7).toFixed(2)}px, ${(a.py * 7).toFixed(2)}px)`;
+        logoCdRef.current.style.transform = `perspective(900px) rotateX(${(-a.py * 13).toFixed(2)}deg) rotateY(${(a.px * 13).toFixed(2)}deg) translate(${(a.px * 7).toFixed(2)}px, ${(a.py * 7).toFixed(2)}px)`;
       if (logoTextRef.current)
         logoTextRef.current.style.transform = `translate(${(a.px * 20).toFixed(2)}px, ${(a.py * 20).toFixed(2)}px)`;
+      // riflesso iridescente: l'arcobaleno conico ruota col mouse (+ lenta
+      // rotazione costante); le lame speculari contro-ruotano, come se la
+      // sorgente di luce restasse ferma mentre il disco si inclina
+      if (shineConicRef.current)
+        shineConicRef.current.style.transform = `rotate(${(a.px * 55 + a.py * 30 + a.t * 0.008).toFixed(1)}deg)`;
+      if (shineStreakRef.current)
+        shineStreakRef.current.style.transform = `rotate(${(-a.px * 80 - a.py * 45 + a.t * 0.004 + 25).toFixed(1)}deg)`;
 
       raf = requestAnimationFrame(tick);
     };
@@ -251,7 +261,7 @@ export default function SplitLanding() {
         style={{ left: "50%" }}
       >
         <div className="relative w-[clamp(220px,34vw,430px)] -translate-x-1/2 -translate-y-1/2">
-          <div ref={logoCdRef}>
+          <div ref={logoCdRef} className="relative will-change-transform">
             <Image
               src="/assets/logo-cd.png"
               alt=""
@@ -260,6 +270,36 @@ export default function SplitLanding() {
               preload
               className="h-auto w-full drop-shadow-[0_18px_45px_rgba(0,0,0,0.55)]"
             />
+            {/* riflesso "CD lucido": il disco nel PNG arriva all'85% della
+                semi-larghezza (misurato dai pixel: r=632/744) — la maschera
+                si ferma ESATTAMENTE lì, e buca il foro centrale */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-full mix-blend-screen"
+              style={{
+                maskImage:
+                  "radial-gradient(circle closest-side, transparent 10%, black 17%, black 79%, transparent 84.5%)",
+                WebkitMaskImage:
+                  "radial-gradient(circle closest-side, transparent 10%, black 17%, black 79%, transparent 84.5%)",
+              }}
+            >
+              <div
+                ref={shineConicRef}
+                className="absolute inset-0 rounded-full opacity-40"
+                style={{
+                  background:
+                    "conic-gradient(from 0deg, rgba(255,90,90,0.85), rgba(255,205,70,0.85), rgba(130,255,140,0.85), rgba(90,225,255,0.85), rgba(130,130,255,0.85), rgba(255,110,255,0.85), rgba(255,90,90,0.85))",
+                }}
+              />
+              {/* lame speculari: riflesso netto, non un bagliore diffuso */}
+              <div
+                ref={shineStreakRef}
+                className="absolute inset-0 rounded-full opacity-85"
+                style={{
+                  background:
+                    "conic-gradient(from 0deg, transparent 0deg, transparent 8deg, rgba(255,255,255,0.95) 14deg, transparent 21deg, transparent 172deg, rgba(255,255,255,0.6) 186deg, transparent 199deg, transparent 360deg)",
+                }}
+              />
+            </div>
           </div>
           <div ref={logoTextRef} className="absolute inset-0">
             <Image
