@@ -58,8 +58,8 @@ export default function SplitLanding() {
   const anim = useRef({
     pos: IDLE, // posizione attuale del divisore
     logoX: IDLE, // il logo segue il divisore con un po' di ritardo
-    menuInsetL: 0, // spazio occupato dal menu music (animato, in px)
-    menuInsetR: 0, // spazio occupato dal menu media (animato, in px)
+    menuInsetL: 0, // spazio del pannello menu music su desktop (animato, px)
+    menuInsetR: 0, // spazio del pannello menu media su desktop (animato, px)
     amp: 1, // ampiezza dell'onda (cresce leggermente in hover)
     px: 0, // parallax corrente (lerp verso il mouse)
     py: 0,
@@ -106,10 +106,8 @@ export default function SplitLanding() {
 
       const ease = (tau: number) => 1 - Math.exp(-dt / tau);
       a.pos += (target - a.pos) * ease(260);
-      // larghezza occupata dai menu laterali, animata con la stessa curva
-      // del divisore. Su mobile il menu non ha pannello: le voci occupano
-      // solo una colonna stretta (~42% dello schermo)
-      const menuW = W < 768 ? W * 0.42 : Math.min(400, W * 0.86);
+      // larghezza del pannello menu su desktop, animata come il divisore
+      const menuW = Math.min(400, W * 0.86);
       a.menuInsetL +=
         ((s.expanded === "music" ? menuW : 0) - a.menuInsetL) * ease(260);
       a.menuInsetR +=
@@ -147,12 +145,37 @@ export default function SplitLanding() {
       // logo appoggiato sul divisore + parallax (il CD si muove meno della scritta)
       if (logoWrapRef.current)
         logoWrapRef.current.style.left = `${(a.logoX * 100).toFixed(3)}%`;
-      // scritte giganti: centrate dinamicamente nello spazio visibile del
-      // proprio lato — tra il menu laterale (se aperto) e il logo/divisore
-      if (labelMusicRef.current)
-        labelMusicRef.current.style.left = `${((a.menuInsetL + a.pos * W) / 2).toFixed(1)}px`;
-      if (labelMediaRef.current)
-        labelMediaRef.current.style.left = `${((a.pos * W + (W - a.menuInsetR)) / 2).toFixed(1)}px`;
+      // scritte giganti:
+      // - desktop: centrate tra pannello menu (se aperto) e divisore/logo,
+      //   dimensione fissa da classe (13vw) — comportamento approvato
+      // - mobile: il logo occupa mezzo schermo, quindi centro e dimensione
+      //   si calcolano sulla striscia LIBERA tra bordo del logo e bordo
+      //   dello schermo (font dinamico: riempie senza sbordare né finire
+      //   sotto il logo)
+      const isMobile = W < 768;
+      const logoHalf = Math.max(110, Math.min(W * 0.17, 215));
+      if (labelMusicRef.current) {
+        if (isMobile) {
+          const edgeL = a.pos * W - logoHalf; // lato sinistro del logo
+          const avail = Math.max(50, edgeL);
+          labelMusicRef.current.style.left = `${(edgeL / 2).toFixed(1)}px`;
+          labelMusicRef.current.style.fontSize = `${Math.min(avail / 3.9, 96).toFixed(1)}px`;
+        } else {
+          labelMusicRef.current.style.left = `${((a.menuInsetL + a.pos * W) / 2).toFixed(1)}px`;
+          labelMusicRef.current.style.fontSize = "";
+        }
+      }
+      if (labelMediaRef.current) {
+        if (isMobile) {
+          const edgeR = a.pos * W + logoHalf; // lato destro del logo
+          const avail = Math.max(50, W - edgeR);
+          labelMediaRef.current.style.left = `${((edgeR + W) / 2).toFixed(1)}px`;
+          labelMediaRef.current.style.fontSize = `${Math.min(avail / 3.9, 96).toFixed(1)}px`;
+        } else {
+          labelMediaRef.current.style.left = `${((a.pos * W + (W - a.menuInsetR)) / 2).toFixed(1)}px`;
+          labelMediaRef.current.style.fontSize = "";
+        }
+      }
       // il CD "guarda" verso il mouse: tilt 3D prospettico oltre al translate
       if (logoCdRef.current)
         logoCdRef.current.style.transform = `perspective(900px) rotateX(${(-a.py * 13).toFixed(2)}deg) rotateY(${(a.px * 13).toFixed(2)}deg) translate(${(a.px * 7).toFixed(2)}px, ${(a.py * 7).toFixed(2)}px)`;
@@ -293,9 +316,11 @@ export default function SplitLanding() {
             ? "scale-100 opacity-100"
             : "scale-95 opacity-0"
         }`}
-        style={{ left: "25%" }}
+        style={{ left: "25%", fontSize: "11vw" }}
       >
-        <span className="whitespace-nowrap font-display text-[11vw] font-light uppercase leading-none tracking-[0.02em] text-white md:text-[13vw]">
+        {/* niente classe di dimensione base: su mobile eredita il font-size
+            dinamico del wrapper; da md la classe 13vw prende il sopravvento */}
+        <span className="whitespace-nowrap font-display font-light uppercase leading-none tracking-[0.02em] text-white md:text-[13vw]">
           Music
         </span>
       </div>
@@ -307,9 +332,9 @@ export default function SplitLanding() {
             ? "scale-100 opacity-100"
             : "scale-95 opacity-0"
         }`}
-        style={{ left: "75%" }}
+        style={{ left: "75%", fontSize: "11vw" }}
       >
-        <span className="whitespace-nowrap text-[11vw] font-black uppercase leading-none tracking-[0.02em] text-white md:text-[13vw]">
+        <span className="whitespace-nowrap font-black uppercase leading-none tracking-[0.02em] text-white md:text-[13vw]">
           Media
         </span>
       </div>
