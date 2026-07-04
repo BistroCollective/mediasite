@@ -154,9 +154,18 @@ export default function SplitLanding() {
       //   sotto il logo)
       const isMobile = W < 768;
       const logoHalf = Math.max(110, Math.min(W * 0.17, 215));
+      // su mobile la scritta si vede solo a sezione aperta: la calcoliamo
+      // direttamente sulla posizione FINALE del divisore, così il fade-in
+      // la rivela già centrata e ferma (niente scivolamento né snap)
+      const labelPos =
+        isMobile && s.expanded
+          ? s.expanded === "music"
+            ? MUSIC_OPEN
+            : MEDIA_OPEN
+          : a.pos;
       if (labelMusicRef.current) {
         if (isMobile) {
-          const edgeL = a.pos * W - logoHalf; // lato sinistro del logo
+          const edgeL = labelPos * W - logoHalf; // lato sinistro del logo
           const avail = Math.max(50, edgeL);
           labelMusicRef.current.style.left = `${(edgeL / 2).toFixed(1)}px`;
           labelMusicRef.current.style.fontSize = `${Math.min(avail / 3.9, 96).toFixed(1)}px`;
@@ -167,7 +176,7 @@ export default function SplitLanding() {
       }
       if (labelMediaRef.current) {
         if (isMobile) {
-          const edgeR = a.pos * W + logoHalf; // lato destro del logo
+          const edgeR = labelPos * W + logoHalf; // lato destro del logo
           const avail = Math.max(50, W - edgeR);
           labelMediaRef.current.style.left = `${((edgeR + W) / 2).toFixed(1)}px`;
           labelMediaRef.current.style.fontSize = `${Math.min(avail / 3.9, 96).toFixed(1)}px`;
