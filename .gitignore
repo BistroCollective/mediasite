@@ -1,7 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# portable toolchain (local node install)
+# portable toolchain (local node + ffmpeg)
 /.tools
+
+# sorgenti video pesanti (le versioni web stanno in public/assets)
+/VIDEO
 
 # local Claude Code settings (per-machine)
 /.claude/settings.local.json

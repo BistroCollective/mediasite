@@ -210,9 +210,6 @@ export default function SplitLanding() {
         </div>
         {/* gradiente d'ombra dal basso, per ancorare la sezione */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(to_top,rgba(4,2,10,0.55),transparent)]" />
-        <span className="absolute bottom-7 left-7 font-mono text-xs font-semibold uppercase tracking-[0.6em] text-white/65 mix-blend-screen">
-          Music
-        </span>
       </section>
 
       {/* ── sezione MEDIA (destra, dark) — sta sopra, ritagliata dall'onda ── */}
@@ -222,18 +219,30 @@ export default function SplitLanding() {
         style={{ clipPath: "inset(0 0 0 50%)" }}
         aria-label="Sezione Media"
       >
-        <Visual
-          content={homeVisuals.media}
-          className={`saturate-[0.7] contrast-[1.08] transition-[filter] duration-500 ${
-            hovered === "media" ? "brightness-[1.35]" : "brightness-100"
+        {/* blur gaussiano: sparisce SOLO al click, mentre il divisore si
+            apre (stessa durata/curva della transizione dei menu). Il leggero
+            scale nasconde i bordi trasparenti che il blur creerebbe */}
+        <div
+          className={`h-full w-full transition-[filter,transform] duration-700 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] ${
+            expanded === "media"
+              ? "blur-0 scale-100"
+              : "blur-[7px] scale-[1.045]"
           }`}
-        />
-        {/* più scuro verso il bordo destro: mood cinematografico */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.3),rgba(0,0,0,0.62))]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(to_top,rgba(0,0,0,0.5),transparent)]" />
-        <span className="absolute bottom-7 right-7 font-mono text-xs font-semibold uppercase tracking-[0.6em] text-white/60">
-          Media
-        </span>
+        >
+          <Visual content={homeVisuals.media} className="contrast-[1.06]" />
+        </div>
+        {/* velo scuro cinematografico: sparisce in hover e a sezione aperta,
+            così il video torna alla sua esposizione corretta */}
+        <div
+          className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${
+            hovered === "media" || expanded === "media"
+              ? "opacity-0"
+              : "opacity-100"
+          }`}
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.3),rgba(0,0,0,0.62))]" />
+          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(to_top,rgba(0,0,0,0.5),transparent)]" />
+        </div>
       </section>
 
       {/* ── divisore a onda ── */}
@@ -251,6 +260,37 @@ export default function SplitLanding() {
           style={{ filter: "drop-shadow(0 0 7px rgba(255,255,255,0.55))" }}
         />
       </svg>
+
+      {/* ── scritte giganti in hover: testo bianco in mix-blend-difference,
+           quindi appare come il NEGATIVO esatto dei colori sottostanti.
+           Ancorate ai bordi dello schermo, senza margine: riempiono il lato
+           e al massimo l'ultima lettera finisce leggermente sotto il logo
+           (che sta a z-16, sopra). Appaiono in hover e RESTANO a sezione
+           aperta — così si vedono anche su mobile, dove l'hover non esiste ── */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute left-0 top-1/2 z-[12] origin-left -translate-y-1/2 mix-blend-difference transition-[opacity,scale] duration-500 ${
+          hovered === "music" || expanded === "music"
+            ? "scale-100 opacity-100"
+            : "scale-95 opacity-0"
+        }`}
+      >
+        <span className="whitespace-nowrap font-display text-[13vw] font-light uppercase leading-none tracking-[0.02em] text-white">
+          Music
+        </span>
+      </div>
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute right-0 top-1/2 z-[12] origin-right -translate-y-1/2 mix-blend-difference transition-[opacity,scale] duration-500 ${
+          hovered === "media" || expanded === "media"
+            ? "scale-100 opacity-100"
+            : "scale-95 opacity-0"
+        }`}
+      >
+        <span className="whitespace-nowrap text-[13vw] font-black uppercase leading-none tracking-[0.02em] text-white">
+          Media
+        </span>
+      </div>
 
       {/* ── logo BISTRO: CD + scritta, parallax su due livelli.
            z-16: sopra grana/vignetta (z-15) → si stacca dal fondo filmico,
@@ -344,14 +384,18 @@ function Visual({
   if (content.type === "video") {
     return (
       <video
-        src={content.src}
         poster={content.poster}
         autoPlay
         muted
         loop
         playsInline
         className={`h-full w-full object-cover ${className}`}
-      />
+      >
+        {/* il browser sceglie la prima sorgente che sa riprodurre:
+            WebM (più leggero) prima, MP4 come fallback universale */}
+        {content.srcWebm && <source src={content.srcWebm} type="video/webm" />}
+        {content.src && <source src={content.src} type="video/mp4" />}
+      </video>
     );
   }
   return (

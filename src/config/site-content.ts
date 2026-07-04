@@ -5,8 +5,10 @@ export type VisualContent = {
   /** "scene" = scena 3D procedurale (shader + strumenti fluttuanti) */
   type: "image" | "video" | "scene";
   src?: string;
+  /** sorgente WebM alternativa (più leggera, i browser che possono la preferiscono) */
+  srcWebm?: string;
   alt?: string;
-  /** poster per i video (opzionale) */
+  /** poster per i video: frame mostrato mentre il video carica */
   poster?: string;
 };
 
@@ -20,9 +22,10 @@ export const homeVisuals: Record<"music" | "media", VisualContent> = {
     type: "scene",
   },
   media: {
-    type: "image",
-    src: "/assets/media-bg.jpg",
-    alt: "Riprese video sul set",
+    type: "video",
+    src: "/assets/media.mp4",
+    srcWebm: "/assets/media.webm",
+    poster: "/assets/media-poster.webp",
   },
 };
 
